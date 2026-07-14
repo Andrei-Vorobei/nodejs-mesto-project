@@ -1,17 +1,19 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
+import { MongoServerError } from 'mongodb';
 
 import User from '../models/user';
 import type { SessionRequest } from '../types/types';
+import { errorMessages } from '../constants/constants';
 
-const { JWT_KEY = 'dev-secret-key' } = process.env;
+const { JWT_KEY = '' } = process.env;
 
 export const getAllUsers = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const users = await User.find({});
     if (!users) {
-      throw new Error('Пользователи не найдены');
+      throw new Error(errorMessages.userNotFound);
     }
     res.json({ data: users });
   } catch (error) {
@@ -26,11 +28,11 @@ export const getUserById = async (
 ): Promise<void> => {
   try {
     if (!req.params.userId) {
-      throw new Error('Переданы некорректные данные при получении пользователя');
+      throw new Error(errorMessages.getUserDataError);
     }
     const user = await User.findById(req.params.userId);
     if (!user) {
-      throw new Error('Пользователь не найден');
+      throw new Error(errorMessages.userNotFound);
     }
     res.json({ data: user });
   } catch (error) {
@@ -42,7 +44,7 @@ export const getCurrentUser = async (req: SessionRequest, res: Response, next: N
   try {
     const user = await User.findById(req.user?._id);
     if (!user) {
-      throw new Error('Пользователь не найден');
+      throw new Error(errorMessages.userNotFound);
     }
     res.json({ data: user });
   } catch (error) {
@@ -54,15 +56,20 @@ export const createUser = async (req: Request, res: Response, next: NextFunction
   try {
     const { password, email } = req.body;
     if (!password || !email) {
-      throw new Error('Переданы некорректные данные при создании пользователя');
+      throw new Error(errorMessages.createUserDataError);
     }
     try {
       const passwordHash = await bcrypt.hash(password, 10);
       const newUser = await User.create({ password: passwordHash, email });
       const token = jwt.sign({ _id: newUser._id }, JWT_KEY, { expiresIn: '7d' });
-      res.status(201).cookie('token', token, { httpOnly: true }).json({ data: newUser });
+      res.status(201).cookie('token', token, { httpOnly: true }).json({
+        data: { email: newUser.email, message: 'Пользователь успешно создан' },
+      });
     } catch (error) {
-      throw new Error('Ошибка при создании пользователя');
+      if (error instanceof MongoServerError && error.code === 11000) {
+        throw new Error(errorMessages.userAlreadyExists);
+      }
+      throw new Error(errorMessages.createUserError);
     }
   } catch (error) {
     next(error);
@@ -73,7 +80,7 @@ export const updateUserById = async (req: SessionRequest, res: Response, next: N
   try {
     const { name, about, avatar } = req.body;
     if (name === undefined && about === undefined && avatar === undefined) {
-      throw new Error('Переданы некорректные данные при обновлении профиля');
+      throw new Error(errorMessages.updateProfileDataError);
     }
     const updatedUser = await User.findByIdAndUpdate(
       req.user?._id,
@@ -81,7 +88,7 @@ export const updateUserById = async (req: SessionRequest, res: Response, next: N
       { new: true, runValidators: true },
     );
     if (!updatedUser) {
-      throw new Error('Пользователь не найден');
+      throw new Error(errorMessages.userNotFound);
     }
     res.json({ data: updatedUser });
   } catch (error) {
@@ -93,7 +100,7 @@ export const updateUserAvatar = async (req: SessionRequest, res: Response, next:
   try {
     const { avatar } = req.body;
     if (avatar === undefined) {
-      throw new Error('Переданы некорректные данные при обновлении аватара');
+      throw new Error(errorMessages.updateAvatarError);
     }
     const updatedUser = await User.findByIdAndUpdate(
       req.user?._id,
@@ -101,7 +108,7 @@ export const updateUserAvatar = async (req: SessionRequest, res: Response, next:
       { new: true, runValidators: true },
     );
     if (!updatedUser) {
-      throw new Error('Пользователь не найден');
+      throw new Error(errorMessages.userNotFound);
     }
     res.json({ data: updatedUser });
   } catch (error) {
@@ -113,14 +120,14 @@ export const login = async (req: Request, res: Response, next: NextFunction): Pr
   try {
     const { email, password } = req.body;
     if (!email || !password) {
-      throw new Error('Неправильные почта или пароль');
+      throw new Error(errorMessages.invalidEmailOrPassword);
     }
     const user = await User.findUserByCredentials(email, password);
     if (!user) {
-      throw new Error('Неправильные почта или пароль');
+      throw new Error(errorMessages.invalidEmailOrPassword);
     }
     const token = jwt.sign({ _id: user._id }, JWT_KEY, { expiresIn: '7d' });
-    res.status(200).cookie('token', token, { httpOnly: true }).json({ message: 'Угадал', user, token });
+    res.status(200).cookie('token', token, { httpOnly: true }).json({ message: 'Угадал' });
   } catch (error) {
     next(error);
   }
