@@ -3,8 +3,6 @@ export const AVATAR_PATTERN = /^(https?:\/\/)(www\.)?([a-zA-Z0-9-]+\.)+[a-zA-Z]{
 export const PASSWORD_PATTERN = /^(?=.*[A-Za-z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]).{8,}$/;
 
 export const errorMessages = {
-  createUserError: 'Ошибка при создании пользователя',
-  createCardError: 'Ошибка при создании карточки',
   updateAvatarError: 'Переданы некорректные данные при обновлении аватара',
   createCardDataError: 'Переданы некорректные данные при создании карточки',
   updateCardDataError: 'Переданы некорректные данные при обновлении карточки',
