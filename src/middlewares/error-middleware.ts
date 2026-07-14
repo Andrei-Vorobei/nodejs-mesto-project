@@ -1,5 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 
+import { errorMessages } from '../constants/constants';
+
 export class ServerError extends Error {
   statusCode: number = 500;
 
@@ -7,29 +9,30 @@ export class ServerError extends Error {
     super(message);
 
     switch (message) {
-      case 'Переданы некорректные данные при обновлении аватара':
-      case 'Переданы некорректные данные при создании карточки':
-      case 'Переданы некорректные данные при обновлении карточки':
-      case 'Переданы некорректные данные при удалении карточки':
-      case 'Переданы некорректные данные при обновлении профиля':
-      case 'Переданы некорректные данные при получении пользователя':
-      case 'Переданы некорректные данные при создании пользователя':
+      case errorMessages.createUserError:
+      case errorMessages.createCardError:
+      case errorMessages.updateAvatarError:
+      case errorMessages.createCardDataError:
+      case errorMessages.updateCardDataError:
+      case errorMessages.deleteCardDataError:
+      case errorMessages.updateProfileDataError:
+      case errorMessages.getUserDataError:
+      case errorMessages.createUserDataError:
         this.statusCode = 400;
         break;
-      case 'Необходима авторизация':
-      case 'Ошибка авторизации':
-      case 'Неправильные почта или пароль':
+      case errorMessages.authorizationRequired:
+      case errorMessages.authorizationError:
+      case errorMessages.invalidEmailOrPassword:
         this.statusCode = 401;
         break;
-      case 'Нет прав для удаления карточки':
+      case errorMessages.forbiddenDeleteCard:
         this.statusCode = 403;
         break;
-      case 'Карточка не найдена':
-      case 'Пользователь не найден':
+      case errorMessages.cardNotFound:
+      case errorMessages.userNotFound:
         this.statusCode = 404;
         break;
-      case 'Ошибка при создании пользователя':
-      case 'Ошибка при создании карточки':
+      case errorMessages.userAlreadyExists:
         this.statusCode = 409;
         break;
       default:

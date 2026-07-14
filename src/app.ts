@@ -3,13 +3,14 @@ import 'dotenv/config';
 import express from 'express';
 import mongoose from 'mongoose';
 import cookieParser from 'cookie-parser';
+import { errors } from 'celebrate';
 
-import userRouter from './routes/users';
-import cardRouter from './routes/cards';
+import appRouter from './routes/index';
 import { errorMiddleware } from './middlewares/error-middleware';
 import { login, createUser } from './controllers/users';
 import { authMiddleware } from './middlewares/auth-middleware';
 import { requestLogger, errorLogger } from './middlewares/logger-middleware';
+import { userAuthValidator } from './validators/user';
 
 const { PORT = 3000, MONGODB_URI } = process.env;
 const app = express();
@@ -25,14 +26,15 @@ app.use(express.json());
 app.use(requestLogger);
 
 app.post('/signin', login);
-app.post('/signup', createUser);
+app.post('/signup', userAuthValidator, createUser);
 
 app.use(authMiddleware);
 
-app.use('/users', userRouter);
-app.use('/cards', cardRouter);
+app.use('/', appRouter);
 
 app.use(errorLogger);
+
+app.use(errors());
 
 app.use(errorMiddleware);
 
