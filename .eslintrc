@@ -41,6 +41,8 @@
     "no-underscore-dangle": ["off", {
       "allow": ["_id"]
     }],
-    "import/prefer-default-export": "off"
+    "import/prefer-default-export": "off",
+    "func-names": "off",
+    "no-unused-vars": ["error", { "varsIgnorePattern": "_(email|password)" }]
   }
 }

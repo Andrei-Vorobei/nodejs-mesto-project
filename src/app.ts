@@ -1,35 +1,38 @@
+import 'dotenv/config';
 // import path from 'path';
-import express, { Request, Response, NextFunction } from 'express';
+import express from 'express';
 import mongoose from 'mongoose';
+import cookieParser from 'cookie-parser';
 
 import userRouter from './routes/users';
 import cardRouter from './routes/cards';
-import { errorMiddleware } from './middlewares/errorMiddleware';
+import { errorMiddleware } from './middlewares/error-middleware';
+import { login, createUser } from './controllers/users';
+import { authMiddleware } from './middlewares/auth-middleware';
+import { requestLogger, errorLogger } from './middlewares/logger-middleware';
 
-export interface SessionRequest extends Request {
-  user?: {
-    _id: string;
-  };
-}
-
-const { PORT = 3000 } = process.env;
+const { PORT = 3000, MONGODB_URI } = process.env;
 const app = express();
 
-mongoose.connect('mongodb://localhost:27017/mestodb');
+app.use(cookieParser());
+
+mongoose.connect(MONGODB_URI || 'mongodb://localhost:27017/mestodb');
 // app.use(express.static(path.join(__dirname, 'public')));
 
 app.use(express.urlencoded({ extended: false }));
 app.use(express.json());
 
-app.use((req: SessionRequest, res: Response, next: NextFunction) => {
-  req.user = {
-    _id: '6a526ab71ea9d85f6ed39a60',
-  };
-  next();
-});
+app.use(requestLogger);
+
+app.post('/signin', login);
+app.post('/signup', createUser);
+
+app.use(authMiddleware);
 
 app.use('/users', userRouter);
 app.use('/cards', cardRouter);
+
+app.use(errorLogger);
 
 app.use(errorMiddleware);
 

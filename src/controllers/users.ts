@@ -1,6 +1,11 @@
 import { Request, Response, NextFunction } from 'express';
+import jwt from 'jsonwebtoken';
+import bcrypt from 'bcryptjs';
+
 import User from '../models/user';
-import type { SessionRequest } from '../app';
+import type { SessionRequest } from '../types/types';
+
+const { JWT_KEY = 'dev-secret-key' } = process.env;
 
 export const getAllUsers = async (req: Request, res: Response, next: NextFunction) => {
   try {
@@ -33,12 +38,29 @@ export const getUserById = async (
   }
 };
 
+export const getCurrentUser = async (req: SessionRequest, res: Response, next: NextFunction) => {
+  try {
+    const user = await User.findById(req.user?._id);
+    if (!user) {
+      throw new Error('Пользователь не найден');
+    }
+    res.json({ data: user });
+  } catch (error) {
+    next(error);
+  }
+};
+
 export const createUser = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { name, about, avatar } = req.body;
+    const { password, email } = req.body;
+    if (!password || !email) {
+      throw new Error('Переданы некорректные данные при создании пользователя');
+    }
     try {
-      const newUser = await User.create({ name, about, avatar });
-      res.status(201).json({ data: newUser });
+      const passwordHash = await bcrypt.hash(password, 10);
+      const newUser = await User.create({ password: passwordHash, email });
+      const token = jwt.sign({ _id: newUser._id }, JWT_KEY, { expiresIn: '7d' });
+      res.status(201).cookie('token', token, { httpOnly: true }).json({ data: newUser });
     } catch (error) {
       throw new Error('Ошибка при создании пользователя');
     }
@@ -82,6 +104,23 @@ export const updateUserAvatar = async (req: SessionRequest, res: Response, next:
       throw new Error('Пользователь не найден');
     }
     res.json({ data: updatedUser });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const login = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const { email, password } = req.body;
+    if (!email || !password) {
+      throw new Error('Неправильные почта или пароль');
+    }
+    const user = await User.findUserByCredentials(email, password);
+    if (!user) {
+      throw new Error('Неправильные почта или пароль');
+    }
+    const token = jwt.sign({ _id: user._id }, JWT_KEY, { expiresIn: '7d' });
+    res.status(200).cookie('token', token, { httpOnly: true }).json({ message: 'Угадал', user, token });
   } catch (error) {
     next(error);
   }
