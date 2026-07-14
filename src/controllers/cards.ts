@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import Card from '../models/card';
-import type { SessionRequest } from '../app';
+import type { SessionRequest } from '../types/types';
 
 export const getAllCards = async (req: Request, res: Response, next: NextFunction) => {
   try {
@@ -31,14 +31,18 @@ export const createCard = async (req: SessionRequest, res: Response, next: NextF
   }
 };
 
-export const deleteCardById = async (req: Request, res: Response, next: NextFunction) => {
+export const deleteCardById = async (req: SessionRequest, res: Response, next: NextFunction) => {
   try {
+    const { user } = req;
     if (!req.params.cardId) {
       throw new Error('Переданы некорректные данные при удалении карточки');
     }
     const deletedCard = await Card.findByIdAndDelete(req.params.cardId);
     if (!deletedCard) {
       throw new Error('Карточка не найдена');
+    }
+    if (deletedCard.owner.toString() !== user?._id) {
+      throw new Error('Нет прав для удаления карточки');
     }
     res.json({ message: 'Карточка успешно удалена', data: deletedCard });
   } catch (error) {
