@@ -58,20 +58,18 @@ export const createUser = async (req: Request, res: Response, next: NextFunction
     if (!password || !email) {
       throw new Error(errorMessages.createUserDataError);
     }
-    try {
-      const passwordHash = await bcrypt.hash(password, 10);
-      const newUser = await User.create({ password: passwordHash, email });
-      const token = jwt.sign({ _id: newUser._id }, JWT_KEY, { expiresIn: '7d' });
-      res.status(201).cookie('token', token, { httpOnly: true }).json({
-        data: { email: newUser.email, message: 'Пользователь успешно создан' },
-      });
-    } catch (error) {
-      if (error instanceof MongoServerError && error.code === 11000) {
-        throw new Error(errorMessages.userAlreadyExists);
-      }
-      throw new Error(errorMessages.createUserError);
-    }
+    const passwordHash = await bcrypt.hash(password, 10);
+    const newUser = await User.create({ password: passwordHash, email });
+    const token = jwt.sign({ _id: newUser._id }, JWT_KEY, { expiresIn: '7d' });
+    res.status(201).cookie('token', token, { httpOnly: true }).json({
+      data: { email: newUser.email, message: 'Пользователь успешно создан' },
+    });
   } catch (error) {
+    if (error instanceof MongoServerError && error.code === 11000) {
+      next(new Error(errorMessages.userAlreadyExists));
+      return;
+    }
+
     next(error);
   }
 };

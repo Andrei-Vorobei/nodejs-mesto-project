@@ -21,12 +21,8 @@ export const createCard = async (req: SessionRequest, res: Response, next: NextF
     if (name === undefined || link === undefined) {
       throw new Error('Переданы некорректные данные при создании карточки');
     }
-    try {
-      const newCard = await Card.create({ name, link, owner: req.user?._id });
-      res.status(201).json({ data: newCard });
-    } catch (error) {
-      throw new Error('Ошибка при создании карточки');
-    }
+    const newCard = await Card.create({ name, link, owner: req.user?._id });
+    res.status(201).json({ data: newCard });
   } catch (error) {
     next(error);
   }
@@ -39,7 +35,7 @@ export const deleteCardById = async (req: SessionRequest, res: Response, next: N
       throw new Error('Переданы некорректные данные при удалении карточки');
     }
     const deletedCard = await Card.deleteOne({ _id: req.params.cardId, owner: user?._id });
-    if (!deletedCard) {
+    if (deletedCard.deletedCount === 0) {
       throw new Error('Карточка не найдена');
     }
     res.json({ message: 'Карточка успешно удалена', data: deletedCard });

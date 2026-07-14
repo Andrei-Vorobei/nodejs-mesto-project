@@ -9,8 +9,6 @@ export class ServerError extends Error {
     super(message);
 
     switch (message) {
-      case errorMessages.createUserError:
-      case errorMessages.createCardError:
       case errorMessages.updateAvatarError:
       case errorMessages.createCardDataError:
       case errorMessages.updateCardDataError:
