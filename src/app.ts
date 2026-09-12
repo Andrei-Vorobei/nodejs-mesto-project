@@ -3,6 +3,7 @@ import 'dotenv/config';
 import express from 'express';
 import mongoose from 'mongoose';
 import cookieParser from 'cookie-parser';
+import cors from 'cors';
 import { errors } from 'celebrate';
 
 import appRouter from './routes/index';
@@ -24,6 +25,8 @@ app.use(express.urlencoded({ extended: false }));
 app.use(express.json());
 
 app.use(requestLogger);
+
+app.use(cors());
 
 app.post('/signin', userAuthValidator, login);
 app.post('/signup', userAuthValidator, createUser);
