@@ -17,16 +17,19 @@ export const authMiddleware = (req: SessionRequest, res: Response, next: NextFun
   }
 
   const { authorization } = req.headers;
+
   if (!authorization || !authorization.startsWith('Bearer ')) {
-    throw new Error('Необходима авторизация');
+    next(new Error('Необходима авторизация'));
+    return;
   }
+
   const token = authorization.replace('Bearer ', '');
+
   try {
     const payload = jwt.verify(token, JWT_KEY);
     req.user = payload as { _id: string };
     next();
   } catch (err) {
-    const error = new Error('Ошибка авторизации');
-    next(error);
+    next(new Error('Ошибка авторизации'));
   }
 };

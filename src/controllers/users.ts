@@ -61,8 +61,12 @@ export const createUser = async (req: Request, res: Response, next: NextFunction
     const passwordHash = await bcrypt.hash(password, 10);
     const newUser = await User.create({ password: passwordHash, email });
     const token = jwt.sign({ _id: newUser._id }, JWT_KEY, { expiresIn: '7d' });
-    res.status(201).cookie('token', token, { httpOnly: true }).json({
-      data: { email: newUser.email, message: 'Пользователь успешно создан' },
+    res.status(201).json({
+      token,
+      data: {
+        email: newUser.email,
+        message: 'Пользователь успешно создан',
+      },
     });
   } catch (error) {
     if (error instanceof MongoServerError && error.code === 11000) {
@@ -125,7 +129,10 @@ export const login = async (req: Request, res: Response, next: NextFunction): Pr
       throw new Error(errorMessages.invalidEmailOrPassword);
     }
     const token = jwt.sign({ _id: user._id }, JWT_KEY, { expiresIn: '7d' });
-    res.status(200).cookie('token', token, { httpOnly: true }).json({ message: 'Угадал' });
+    res.status(200).json({
+      token,
+      message: 'Угадал',
+    });
   } catch (error) {
     next(error);
   }
