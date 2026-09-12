@@ -27,7 +27,7 @@ app.use(express.json());
 app.use(requestLogger);
 
 app.use(cors({
-  origin: 'http://magic-friday.ru',
+  origin: ['https://magic-friday.ru', 'http://magic-friday.ru', 'http://localhost:3000'],
   credentials: true,
 }));
 
