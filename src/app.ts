@@ -26,7 +26,10 @@ app.use(express.json());
 
 app.use(requestLogger);
 
-app.use(cors());
+app.use(cors({
+  origin: 'http://magic-friday.ru',
+  credentials: true,
+}));
 
 app.post('/signin', userAuthValidator, login);
 app.post('/signup', userAuthValidator, createUser);
